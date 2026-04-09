@@ -1,0 +1,115 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  plan          String    @default("starter")
+  creditsTotal  Int       @default(120)
+  creditsUsed   Int       @default(0)
+  rolloverCredits Int     @default(0)
+  stripeCustomerId String?
+  stripeSubscriptionId String?
+  accounts      Account[]
+  sessions      Session[]
+  videos        Video[]
+  connectedPlatforms ConnectedPlatform[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Video {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  filename  String
+  url       String
+  duration  Float    @default(0)
+  fileSize  Int      @default(0)
+  status    String   @default("pending")
+  progress  Int      @default(0)
+  currentStep String @default("")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  clips     Clip[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Clip {
+  id          String   @id @default(cuid())
+  videoId     String
+  title       String
+  startTime   Float
+  endTime     Float
+  duration    Float
+  viralScore  Float    @default(0)
+  thumbnailUrl String  @default("")
+  clipUrl     String   @default("")
+  captionStyle Json    @default("{}")
+  status      String   @default("pending")
+  video       Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  scheduledPosts ScheduledPost[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ScheduledPost {
+  id          String   @id @default(cuid())
+  clipId      String
+  platform    String
+  scheduledAt DateTime
+  status      String   @default("scheduled")
+  caption     String   @default("")
+  postUrl     String?
+  clip        Clip     @relation(fields: [clipId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ConnectedPlatform {
+  id            String @id @default(cuid())
+  userId        String
+  platform      String
+  accessToken   String
+  refreshToken  String?
+  expiresAt     DateTime?
+  accountName   String?
+  user          User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt     DateTime @default(now())
+  @@unique([userId, platform])
+}
