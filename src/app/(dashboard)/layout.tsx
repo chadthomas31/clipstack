@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useSession, signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import {
   Upload,
@@ -13,8 +14,9 @@ import {
   LogOut,
   ChevronLeft,
   Menu,
+  Loader2,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const navItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
@@ -27,7 +29,35 @@ const navItems = [
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { data: session, status } = useSession();
   const [collapsed, setCollapsed] = useState(false);
+  const [credits, setCredits] = useState({ used: 0, total: 120, remaining: 120 });
+
+  useEffect(() => {
+    if (session) {
+      fetch("/api/billing")
+        .then((r) => r.json())
+        .then((data) => {
+          if (data.credits) setCredits(data.credits);
+        })
+        .catch(() => {});
+    }
+  }, [session]);
+
+  if (status === "loading") {
+    return (
+      <div className="flex h-screen items-center justify-center bg-zinc-950">
+        <Loader2 className="w-8 h-8 text-indigo-400 animate-spin" />
+      </div>
+    );
+  }
+
+  if (!session) {
+    if (typeof window !== "undefined") window.location.href = "/login";
+    return null;
+  }
+
+  const creditPercent = credits.total > 0 ? ((credits.total - credits.used) / credits.total) * 100 : 0;
 
   return (
     <div className="flex h-screen bg-zinc-950">
@@ -73,23 +103,35 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           })}
         </nav>
 
-        {/* Credits indicator */}
         {!collapsed && (
           <div className="p-4 border-t border-zinc-800">
             <div className="card !p-3">
               <div className="flex justify-between text-xs mb-2">
                 <span className="text-zinc-400">Credits</span>
-                <span className="text-indigo-400 font-medium">87 / 120</span>
+                <span className="text-indigo-400 font-medium">
+                  {credits.remaining} / {credits.total}
+                </span>
               </div>
               <div className="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
-                <div className="h-full bg-indigo-500 rounded-full" style={{ width: "72%" }} />
+                <div
+                  className="h-full bg-indigo-500 rounded-full transition-all"
+                  style={{ width: `${creditPercent}%` }}
+                />
               </div>
             </div>
           </div>
         )}
 
         <div className="p-2 border-t border-zinc-800">
-          <button className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm text-zinc-400 hover:text-red-400 hover:bg-red-500/5 transition-all">
+          {!collapsed && session?.user?.name && (
+            <div className="px-3 py-2 text-xs text-zinc-500 truncate">
+              {session.user.name}
+            </div>
+          )}
+          <button
+            onClick={() => signOut({ callbackUrl: "/" })}
+            className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm text-zinc-400 hover:text-red-400 hover:bg-red-500/5 transition-all"
+          >
             <LogOut className="w-5 h-5 shrink-0" />
             {!collapsed && "Sign Out"}
           </button>
