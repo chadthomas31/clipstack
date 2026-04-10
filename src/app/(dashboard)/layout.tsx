@@ -71,7 +71,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div className="flex items-center justify-between h-16 px-4 border-b border-zinc-800">
           {!collapsed && (
             <Link href="/" className="text-lg font-bold gradient-text">
-              ForJClients
+              ClipStack
             </Link>
           )}
           <button

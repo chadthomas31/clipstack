@@ -6,7 +6,7 @@ import { Providers } from "@/components/providers";
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const metadata: Metadata = {
-  title: "ForJClients — AI Video Clipping Tool",
+  title: "ClipStack — AI Video Clipping Tool",
   description: "Upload your podcast, let AI find the best moments, add captions, and schedule across every platform. The smarter, affordable alternative to expensive clipping tools.",
   keywords: ["AI clipping", "video clips", "podcast clips", "viral clips", "social media scheduling"],
 };
